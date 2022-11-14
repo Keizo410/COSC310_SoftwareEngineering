@@ -1,3 +1,5 @@
+
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,11 +21,14 @@ public class Login extends connecttodb{
 	public int Emailind;
 	public int Passind;
 	Scanner reader = new Scanner(System.in);
-
+        public Login(){
+            
+        }
 	// This constructor suggests users enter their email and password. This also
 	// check if this user has already account or not.
 	// If they have, return T, if not, F.
 	public Login(int attempt, String uname) throws SQLException, ClassNotFoundException {
+                 
 		// Ask input from user
 		if (attempt == 1) { //blank slate
 			System.out.println("Please enter your email: ");
@@ -129,6 +134,22 @@ public class Login extends connecttodb{
 		System.out.println("The password you have entered is incorrect.");
 		return false;
 	}
+        public boolean HasAdminPassword( ) throws SQLException, ClassNotFoundException{
+            int j =1;
+		// get password from input by getPassword function and get resultSet.
+		String uPassword = PasswordEncryption(getPassword());
+		ResultSet r = getResultSet("select * from librarians");
+		// Use while loop to check existence until the end of the password column
+		while (r.next()) {
+			if (r.getString(2).equals(uPassword)) {
+				PassindSet(r.getRow());
+				return true;
+			}
+			
+		}
+		System.out.println("The password you have entered is incorrect.");
+		return false;
+        }
 	//check the index of table from database for checking password and email matching
 	public int EmailindSet(int ind) {
 		return this.Emailind = ind;
@@ -150,15 +171,14 @@ public class Login extends connecttodb{
 			return false;
 		}
 	}
-
+        
 	// check if this login info match with the database info
 	public boolean HasRegistry() throws SQLException, ClassNotFoundException {
-//		if (HasAdminEmail() && HasPassword()&&indCheck()) {
-//			System.out.println("e ind and p ind" + EmailindGet()+PassindGet());
-//
-//			return this.authentication = true; //authenticates if admin logs in ONLY USED BY ADMIN SCREEN
-//		}
-		 if (HasEmail() && HasPassword()&&indCheck()) { //authenticates if anyone logs in
+		if (HasAdminEmail() && HasAdminPassword()&&indCheck()) {
+			System.out.println("e ind and p ind" + EmailindGet()+PassindGet());
+
+			return this.adminAuthentication = true; //authenticates if admin logs in ONLY USED BY ADMIN SCREEN
+		}else if (HasEmail() && HasPassword()&&indCheck()) { //authenticates if anyone logs in
 						
 			return this.authentication = true;
 		} else {
@@ -183,7 +203,6 @@ public class Login extends connecttodb{
 	//password encription function. This returns encripted version of password.
 	public String PasswordEncryption(String pass) {
 		String password = pass;
-		System.out.println("new pass is "+password);
 		String encryptedPassword = null; 
 		
 		try {
@@ -204,13 +223,12 @@ public class Login extends connecttodb{
 			
 		return encryptedPassword;
 	}
-	
-	public void PasswordReset(String y) throws ClassNotFoundException, SQLException {
-		if(y.equals("yes")) {
-			String pd;
-			System.out.println("Enter new password: ");
-			pd = reader.next();
-			setPassword(pd);
+	//password should be different from the previous one, also the user should have useremail in database
+	public String PasswordReset(String pass) throws ClassNotFoundException, SQLException {
+		if(HasEmail()&&pass!=getPassword()) {
+			String pd =pass;
+			
+			
 			pd = PasswordEncryption(pd);
 			
 			 String sql = "update users set password = ?"+" where email = ?";
@@ -218,16 +236,22 @@ public class Login extends connecttodb{
             stmt.setString(1, pd);
             stmt.setString(2, getEmail());
 	        stmt.executeUpdate();
-	        
+	        setPassword(pass);
 	        System.out.println("Your password is updated!");
-		}else if(y.equals("no")) {
-			System.out.println("No reset. Ok, bye");
-			return; 
+	        return pass;
 		}else {
-			return;
+			return getPassword();
 		}
-	}
+		
+			}
 	
+        public boolean getAdminAuthentification(){
+            return this.adminAuthentication;
+        }
+        
+        public boolean getAuthentification(){
+            return this.authentication;
+        }
 	
 	
 }
